@@ -1,10 +1,9 @@
 # An AI-driven framework for time-series processing-microstructure-property prediction
 This repository contains the code for performing microstrucutre prediction using AI based on processing parameters as input. The code provides the following functions:
 
-- Train an autoencoder model on a given dataset.
+- Train an seq2seq model on a given dataset.
 - Simulator code for data generation.
-- Predict microstructure using a pre-trained autoencoder model.
-- Property calculation and linear bias model correction method for improveing predicted property accuracy.
+- Predict microstructure using a pre-trained model.
 
 ## Installation Requirements
 The basic requirement for using the files is a Python 3.8.19 environment with PyTorch 2.3.0
