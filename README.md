@@ -13,11 +13,12 @@ The basic requirement for using the files is a Python 3.8.19 environment with Py
 Here is a brief description of the files and folder content:
 
 - Simulator: folder where includes all files for simulation to generate dataset.
-- autoencoder_v0.py: code to train and test autoencoder model.
-- linear_add.py: code to calculate property and linear bias model correction method for improveing predicted property accuracy.
+- train.py: code to train the seq2seq model.
+- test.py: code to test the seq2seq model.
+- difH.py: code for analyzing different history H for the seq2seq model.
 
 ## Running the code
-To generate the dataset, run process.m located in the Simulator folder. Next, train and test the autoencoder model by executing autoencoder_v0.py. Finally, calculate the property by running linear_add.py.
+To generate the dataset, run process.m located in the Simulator folder. Next, train and test the seq2seq model by executing train.py and test.py. Run difH.py if you want to analyze different history H for seq2seq model.
 
 ## Developer Team
 The code was developed by Yuwei Mao from the [CUCIS](http://cucis.ece.northwestern.edu/) group at the Electrical and Computer Engineering Department at Northwestern University.
