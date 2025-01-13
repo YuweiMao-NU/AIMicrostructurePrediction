@@ -6,161 +6,107 @@
 clear all; clc;
 
 load newmesh
-load newgalfenoldata  % Loading cubic structure data
+load Copper_Properties  % Loading cubic structure data
 
 % Input ODFs for the first run
 
-% odf_samples = textread('Sample_ODF.txt'); % Replace this with your own samples - 76x1 vectors
-
-ans = repmat(1/76, 1, 76)';
-volfrac = volumefraction*ans;
-odf_samples = ans./volfrac;
-
-
-
-% Input ODF: ODF (generating 145 odfs from 76 independent ODFs)
-% This is an auto process : 145 ODFs are due to crystal symmetry
-
-odf = zeros(145,1);
-odf(1:76) = odf_samples;
-odf(newmesh.eqv(1,:)) = odf(newmesh.eqv(2,:));
+odf = (1/sum(volumefraction))*ones(145,1);
 
 T1=table(odf);
 writetable(T1,'Input_ODF.txt','WriteVariableNames',0); % saving as initial Input_ODF in the folder
 
-% Defining Process Parameters
-
-% param_tension=     1	0	0	0	0	0	0	0
-% param_compression= 0	1	0	0	0	0	0	0
-% param_xyshear=     0	0	1	0	0	0	0	0
-% param_xzshear=     0	0	0	1	0	0	0	0
-% param_yzshear=     0	0	0	0	1	0	0	0
-
-% Non-zero value can be changed with any strain rate value
-
-% For a combined load (e.g., tension and xy shear the param file will look
-% like
-%param_tension_xyshear= 1	0	1	0	0	0	0	0
-
-% Similarly other load combinations can be created
-
-% Let's do it for tension with strain rate 1
-
 param=zeros(1,8);
 tmp = 0;
+n=1;
 
-for iter = 1:2
-                  
-    ans = repmat(1/76, 1, 76);
-    odf_samples = ans./volumefraction;
+for pa1=0:0.25:1
+    for pa2=0:0.25:1
+        for pa3=0:0.25:1
+            for pa4=0:0.25:1
+                for pa5=0:0.25:1
+                    tmp = tmp+1;
+                    odf = (1/sum(volumefraction))*ones(145,1);
+                    T1=table(odf);
+                    writetable(T1,'Input_ODF.txt','WriteVariableNames',0);
+
+                    param(1, 1)=pa1;
+                    param(1, 2)=pa2;
+                    param(1, 3)=pa3;
+                    param(1, 4)=pa4;
+                    param(1, 5)=pa5;
+
+                    T2=table(param);
+                    writetable(T2,'param.txt','WriteVariableNames',0,'Delimiter','\t') % saving param file in the folder
 
 
-    odf = zeros(145,1);
-    odf(1:76) = odf_samples;
-    odf(newmesh.eqv(1,:)) = odf(newmesh.eqv(2,:));
+                    odf_eachstep_total=zeros(145,10,n);      % Raw ODFs after all runs
+                    odf_normalized_total_76=zeros(76,10,n);   % Normalized independent (76) ODFs after all runs
+                    odf_normalized_total_145=zeros(145,10,n); % Normalized independent and dependent (145) ODFs after all runs
 
-    T1=table(odf);
-    writetable(T1,'Input_ODF.txt','WriteVariableNames',0); % saving as initial Input_ODF in the folder
 
-    tmp = tmp+1;
-    pa1 = rand;
-    pa2 = rand;
-    pa3 = rand;
-    pa4 = rand;
-    pa5 = rand;
-    param(1, 1)=pa1;
-    param(1, 2)=pa2;
-    param(1, 3)=pa3;
-    param(1, 4)=pa4;
-    param(1, 5)=pa5;
+                    system("/home/ymt1957/wine-dirs/wine64-build/wine /data/ymt1957/processing/Simulator/app.exe"); % Command for process running
 
-    T2=table(param);
-    writetable(T2,'param.txt','WriteVariableNames',0,'Delimiter','\t') % saving param file in the folder
+            %       system('app.exe'); % Command for process running
 
-    
-    n=1; % number of steps i.e., how many times we want to run the process
-    
-    odf_eachstep_total=zeros(145,10,n);      % Raw ODFs after all runs
-    odf_normalized_total_76=zeros(76,10,n);   % Normalized independent (76) ODFs after all runs
-    odf_normalized_total_145=zeros(145,10,n); % Normalized independent and dependent (145) ODFs after all runs
-    
-    for kk=1:1:n;
-        
-        system("/home/ymt1957/wine-dirs/wine64-build/wine /data/ymt1957/processing/Simulator/app.exe"); % Command for process running
-%         system("app.exe");
-        odf_eachstep=zeros(145,10);
-        
-        % saving ODF outputs of first 9 steps of each run (extracting from .out)
-        
-        
-        for i=1:1:9;
-            
-            fname=sprintf('ODFField000%d.out',i);
-            f = fopen(fname);
-            C = textscan(f, '%s','delimiter','\n');
-            odf_output=zeros(145,1);
-            
-            for j=1:1:145;
-                a=str2num(C{1, 1}{(4+j),1});
-                b=a(4);
-                if b<0
-                    b=0;
-                else
-                    b=b;
+                    % Initialize matrix A to store the last column from each file
+                    A = zeros(145, 10); % Since we are taking 145 lines from 10 files
+
+                    % Loop over all 10 files
+                    for fileIdx = 1:10
+                        % Generate the file name, e.g., ODFField0001.out, ODFField0002.out, etc.
+                        fileName = sprintf('ODFField%04d.out', fileIdx);
+
+                        % Open the file for reading
+                        fileID = fopen(fileName, 'r');
+
+                        % Read the entire file into a cell array, one line per cell
+                        fileContent = textscan(fileID, '%s', 'Delimiter', '\n');
+                        fileContent = fileContent{1}; % Extract the content from the cell array
+
+                        % Close the file
+                        fclose(fileID);
+
+                        % Extract lines from 5 to 149 (these lines are stored in cell array 5:149)
+                        selectedLines = fileContent(5:149);
+
+                        % Loop through each of these lines to extract the last column
+                        for lineIdx = 1:length(selectedLines)
+                            % Split the line into individual columns based on whitespace
+                            columns = strsplit(selectedLines{lineIdx});
+
+                            % Convert the last column to a number and store in matrix A
+                            A(lineIdx, fileIdx) = str2double(columns{end});
+                        end
+                    end
+
+                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    % Initialize B with 76 rows and 10 columns
+                    B = zeros(76, 10);
+
+                    % Load the mapping from the 'mapping.txt' file
+                    % Assuming the mapping file has the format like "B(1) = A(57)", "B(2) = A(13)", etc.
+
+                    fileID = fopen('mapping.txt', 'r');
+                    mappingData = textscan(fileID, 'B(%d) = A(%d)', 'Delimiter', '\n');
+                    fclose(fileID);
+
+                    % Extract the row indices for B and A from the mapping data
+                    B_indices = mappingData{1};
+                    A_indices = mappingData{2};
+
+                    % Map the corresponding rows from A to B using the mapping
+                    for i = 1:length(B_indices)
+                        B(B_indices(i), :) = A(A_indices(i), :);
+                    end
+                    odf_normalized_total_76 = B;
+                    path = ['data_new/', num2str(pa1) '_',num2str(pa2),'_',num2str(pa3),'_', num2str(pa4),'_', num2str(pa5), '.mat']
+                    save(path, 'odf_normalized_total_76');
                 end
-                odf_output(j)=b;
             end
-            odf_eachstep(:,i)=odf_output;
-            fclose(f);
         end
-        
-        % saving ODF output of the 10th steps of each run
-        
-   
-        f1 = fopen('ODFField0010.out');
-        C1 = textscan(f1, '%s','delimiter','\n');
-        
-        odf_output_10=zeros(145,1);
-        
-        for k=1:1:145;
-            a=str2num(C1{1, 1}{(4+k),1});
-            b=a(4);
-            if b<0
-                b=0;
-            else
-                b=b;
-            end
-            odf_output_10(k)=b;
-        end
-        
-        odf_eachstep(:,10)=odf_output_10;
-        fclose(f1);
-        
-        %Normalized Independent and Dependent ODFs
-        
-        odf_normalized_76=zeros(76,10);
-        odf_normalized_145=zeros(145,10);
-        
-        for m=1:1:10;
-            odf_76=odf_eachstep(1:76,m);
-            check=volumefraction*odf_76;
-            odf_76=odf_76./check;
-            odf_normalized_76(:,m)=odf_76;
-            odf_145=zeros(145,1);
-            odf_145(1:76)=odf_76;
-            odf_145(newmesh.eqv(1,:)) = odf_145(newmesh.eqv(2,:));
-            odf_normalized_145(:,m)=odf_145;
-        end
-
-        odf_eachstep_total(:,:,kk)=odf_eachstep;
-        odf_normalized_total_76(:,:,kk)=odf_normalized_76;
-        odf_normalized_total_145(:,:,kk)=odf_normalized_145;
-               
     end
-    path = ['data_random/', num2str(pa1) '_',num2str(pa2),'_',num2str(pa3),'_', num2str(pa4),'_', num2str(pa5), '.mat']
-    save(path, 'odf_normalized_total_76');
-                    
 end
+                    
 
 
 
