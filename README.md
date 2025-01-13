@@ -24,7 +24,7 @@ The code was developed by Yuwei Mao from the [CUCIS](http://cucis.ece.northweste
 
 ## Publication
 1. Mao, Yuwei, Mahmudul Hasan, Claire Lee, Muhammed Nur Talha Kilic, Vishu Gupta, Wei-Keng Liao, Alok Choudhary, Pinar Acar, and Ankit Agrawal. "A Deep Learning Framework for Time-Series Processing-Microstructure-Property Prediction." In 2023 International Conference on Machine Learning and Applications (ICMLA), pp. 890-893. IEEE, 2023. [PDF](https://ieeexplore.ieee.org/abstract/document/10459976)
-2. 
+
 ## Disclaimer
 The research code shared in this repository is shared without any support or guarantee on its quality. However, please do raise an issue if you find anything wrong and I will try my best to address it.
 
